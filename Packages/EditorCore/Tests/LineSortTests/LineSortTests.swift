@@ -233,4 +233,38 @@ struct LineSortTests {
         #expect(options.parse("+1,000") == nil)
         #expect(options.parse("dog 10") == nil)
     }
+    
+    @Test func ignoresSurroundingWhitespaceOnlyWhenEnabled() {
+        
+        let pattern = EntireLineSortPattern()
+        var options = SortOptions(numeric: false, isLocalized: false)
+        let input = "  zebra\t\napple\n"
+        #expect(!options.ignoresSurroundingWhitespace)
+        #expect(pattern.sort(input, options: options) == input)
+        options.ignoresSurroundingWhitespace = true
+        #expect(pattern.sort(input, options: options) == "apple\n  zebra\t\n")
+        #expect(pattern.sort("", options: options).isEmpty)
+        #expect(pattern.sort(" \t", options: options) == " \t")
+    }
+    
+    
+    @Test func whitespaceSortPreservesHeadersNumbersAndLineEndings() {
+        
+        let pattern = EntireLineSortPattern()
+        let options = SortOptions(isLocalized: false, keepsFirstLine: true, descending: true, ignoresSurroundingWhitespace: true)
+        #expect(pattern.sort("Header\r\n 2 \r\n10\t\r\n", options: options) == "Header\r\n10\t\r\n 2 \r\n")
+        #expect(pattern.sort("Header\n 2 \n10\t", options: options) == "Header\n10\t\n 2 ")
+    }
+    
+    
+    @Test func whitespaceSortNormalizesRegexKeysAndPreservesMissingKeys() {
+        
+        var pattern = RegularExpressionSortPattern()
+        pattern.searchPattern = "\\[(.*?)\\]"
+        pattern.usesCaptureGroup = true
+        pattern.group = 1
+        let options = SortOptions(numeric: false, isLocalized: false, ignoresSurroundingWhitespace: true)
+        #expect(pattern.sort("[  zebra ]\n[apple]\nno key\n", options: options) == "[apple]\n[  zebra ]\nno key\n")
+    }
+
 }
