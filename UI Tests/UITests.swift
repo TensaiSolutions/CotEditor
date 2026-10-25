@@ -61,14 +61,16 @@ import XCTest
             textView.typeKey(.delete, modifierFlags: [])
         }
         
+        let windowCountBeforeClose = app.windows.count
         // close window without saving
         documentWindow.buttons[XCUIIdentifierCloseWindow].click()
         if documentWindow.sheets.count > 0 {
             // it actually depends on user settings and iCloud availability if save sheet appears...
             documentWindow.sheets.firstMatch.children(matching: .button)["Delete"].click()
         }
-        sleep(1)
-        XCTAssert(!documentWindow.exists)
+        let fewerWindows = NSPredicate { _, _ in app.windows.count < windowCountBeforeClose }
+        self.expectation(for: fewerWindows, evaluatedWith: nil)
+        self.waitForExpectations(timeout: 5)
     }
     
     
