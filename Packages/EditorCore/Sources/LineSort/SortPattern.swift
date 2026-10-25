@@ -64,7 +64,14 @@ extension SortPattern {
         let firstLine = options.keepsFirstLine ? lines.removeFirst() : nil
         
         lines = lines
-            .map { (line: $0, key: self.sortKey(for: $0.contents)) }
+            .map { line in
+                let key = self.sortKey(for: line.contents).map { key in
+                    options.ignoresSurroundingWhitespace
+                        ? key.trimmingCharacters(in: CharacterSet(charactersIn: " \t"))
+                        : key
+                }
+                return (line: line, key: key)
+            }
             .sorted {
                 switch ($0.key, $1.key) {
                     case let (.some(key0), .some(key1)):

@@ -30,6 +30,7 @@ public struct SortOptions: Equatable, Sendable {
     
     public var ignoresCase: Bool
     public var numeric: Bool
+    public var ignoresSurroundingWhitespace: Bool
     
     public var isLocalized: Bool
     public var keepsFirstLine: Bool
@@ -37,10 +38,11 @@ public struct SortOptions: Equatable, Sendable {
     
     var locale: Locale
     
-    public init(ignoresCase: Bool = true, numeric: Bool = true, isLocalized: Bool = true, keepsFirstLine: Bool = false, descending: Bool = false, locale: Locale = .current) {
+    public init(ignoresCase: Bool = true, numeric: Bool = true, isLocalized: Bool = true, keepsFirstLine: Bool = false, descending: Bool = false, ignoresSurroundingWhitespace: Bool = false, locale: Locale = .current) {
         
         self.ignoresCase = ignoresCase
         self.numeric = numeric
+        self.ignoresSurroundingWhitespace = ignoresSurroundingWhitespace
         self.isLocalized = isLocalized
         self.keepsFirstLine = keepsFirstLine
         self.descending = descending

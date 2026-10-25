@@ -104,4 +104,107 @@ import XCTest
             XCUIApplication().launch()
         }
     }
+    
+    func testSortIgnoringSurroundingWhitespace() throws {
+        
+        let fileURL = FileManager.default.temporaryDirectory
+            .appendingPathComponent("SortWhitespace-\(UUID().uuidString).txt")
+        let initial = "  zebra\t\napple\n"
+        let sorted = "apple\n  zebra\t\n"
+        try initial.write(to: fileURL, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(at: fileURL) }
+        
+        let app = XCUIApplication()
+        app.launchArguments = ["-NSQuitAlwaysKeepsWindows", "NO"]
+        app.launch()
+        defer { app.terminate() }
+        
+        func openFixture() {
+            app.typeKey("o", modifierFlags: .command)
+            app.typeKey("g", modifierFlags: [.command, .shift])
+            let pathField = app.textFields["PathTextField"].firstMatch
+            XCTAssertTrue(pathField.waitForExistence(timeout: 10))
+            pathField.click()
+            pathField.typeKey("a", modifierFlags: .command)
+            pathField.typeText(fileURL.path)
+            app.typeKey(.return, modifierFlags: [])
+            XCTAssertTrue(pathField.waitForNonExistence(timeout: 10))
+            let openButton = app.buttons["OKButton"].firstMatch
+            XCTAssertTrue(openButton.waitForExistence(timeout: 10))
+            openButton.click()
+        }
+        
+        openFixture()
+        let title = fileURL.deletingPathExtension().lastPathComponent
+        let window = app.windows.matching(NSPredicate(format: "title CONTAINS %@", title)).firstMatch
+        let editor = window.textViews.firstMatch
+        XCTAssertTrue(editor.waitForExistence(timeout: 15))
+        XCTAssertEqual(editor.value as? String, initial)
+        
+        func sortDocument() {
+            editor.click()
+            editor.typeKey("a", modifierFlags: .command)
+            app.activate()
+            XCTAssertTrue(app.menuBars.firstMatch.waitForExistence(timeout: 5))
+            // The Text menu can expose an empty accessibility title on newer macOS.
+            app.menuBars.menuBarItems.containing(.menuItem, identifier: "Sort by Pattern…").firstMatch.click()
+            app.menuBars.menuItems["Lines"].click()
+            app.menuBars.menuItems["Sort by Pattern…"].click()
+            let sheet = window.sheets.firstMatch
+            XCTAssertTrue(sheet.waitForExistence(timeout: 5))
+            let entireLine = sheet.radioButtons["Entire line"]
+            entireLine.click()
+            XCTAssertEqual(entireLine.value as? Int, 1)
+            let toggle = sheet.checkBoxes["Ignore surrounding whitespace"]
+            XCTAssertEqual(toggle.value as? Int, 0)
+            // Changing the sort key animates the sheet height; wait for the control to settle.
+            var lastFrame = toggle.frame
+            var lastChange = Date()
+            let settled = NSPredicate { _, _ in
+                let frame = toggle.frame
+                if frame != lastFrame { lastFrame = frame; lastChange = Date() }
+                return Date().timeIntervalSince(lastChange) >= 0.5
+            }
+            self.expectation(for: settled, evaluatedWith: nil)
+            self.waitForExpectations(timeout: 5)
+            let optionsScreenshot = XCTAttachment(screenshot: sheet.screenshot())
+            optionsScreenshot.name = "Sort options"
+            optionsScreenshot.lifetime = .keepAlways
+            self.add(optionsScreenshot)
+            toggle.click()
+            self.expectation(for: NSPredicate { _, _ in toggle.value as? Int == 1 }, evaluatedWith: nil)
+            self.waitForExpectations(timeout: 5)
+            let languageRules = sheet.checkBoxes["Respect language rules"]
+            if languageRules.value as? Int == 1 { languageRules.click() }
+            sheet.buttons["Sort"].click()
+            XCTAssertTrue(sheet.waitForNonExistence(timeout: 5))
+        }
+        
+        sortDocument()
+        XCTAssertEqual(editor.value as? String, sorted)
+        app.typeKey("z", modifierFlags: .command)
+        XCTAssertEqual(editor.value as? String, initial)
+        sortDocument()
+        XCTAssertEqual(editor.value as? String, sorted)
+        app.typeKey("s", modifierFlags: .command)
+        let persisted = NSPredicate { _, _ in
+            (try? String(contentsOf: fileURL, encoding: .utf8)) == sorted
+        }
+        self.expectation(for: persisted, evaluatedWith: nil)
+        self.waitForExpectations(timeout: 10)
+        XCTAssertEqual(try Data(contentsOf: fileURL), Data(sorted.utf8))
+        
+        let screenshot = XCTAttachment(screenshot: window.screenshot())
+        screenshot.name = "Sorted document retains whitespace"
+        screenshot.lifetime = .keepAlways
+        self.add(screenshot)
+        
+        app.terminate()
+        app.launch()
+        openFixture()
+        let reopened = app.windows.matching(NSPredicate(format: "title CONTAINS %@", title)).firstMatch.textViews.firstMatch
+        XCTAssertTrue(reopened.waitForExistence(timeout: 15))
+        XCTAssertEqual(reopened.value as? String, sorted)
+    }
+
 }

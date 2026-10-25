@@ -128,6 +128,9 @@ struct PatternSortView: View {
                     VStack(alignment: .leading, spacing: isLiquidGlass ? nil : 6) {
                         Toggle(String(localized: "Ignore case", table: "PatternSort"),
                                isOn: $options.ignoresCase)
+                        Toggle(String(localized: "Ignore surrounding whitespace", table: "PatternSort"),
+                               isOn: $options.ignoresSurroundingWhitespace)
+                            .help(String(localized: "Ignore leading and trailing spaces and tabs in sort keys without changing the text.", table: "PatternSort", comment: "tooltip"))
                         Toggle(String(localized: "Respect language rules", table: "PatternSort"),
                                isOn: $options.isLocalized)
                         Toggle(String(localized: "Treat numbers as numeric values", table: "PatternSort"),

@@ -1,6 +1,26 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Ignore surrounding whitespace" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ignore surrounding whitespace"
+          }
+        }
+      }
+    },
+    "Ignore leading and trailing spaces and tabs in sort keys without changing the text." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ignore leading and trailing spaces and tabs in sort keys without changing the text."
+          }
+        }
+      }
+    },
     "Clear Recents" : {
       "localizations" : {
         "bg" : {
